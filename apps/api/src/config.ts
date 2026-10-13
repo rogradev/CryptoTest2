@@ -1,10 +1,15 @@
 import { z } from "zod";
 import dotenv from "dotenv";
 import { join } from "node:path";
-import { projectRoot } from "./paths.js";
-dotenv.config({ path: join(projectRoot, ".env"), quiet: true });
+
+dotenv.config({
+  path: [join(process.cwd(), ".env"), join(process.cwd(), "../../.env")],
+  quiet: true,
+});
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   DATABASE_URL: z
     .string()
     .url()

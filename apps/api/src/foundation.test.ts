@@ -30,6 +30,10 @@ describe("configuration", () => {
     DATABASE_URL: "postgresql://localhost/wallet",
     WALLET_ENCRYPTION_KEY: key,
   };
+  it("accepts Vercel production runtime while retaining Devnet", () => {
+    const config = envSchema.parse({ ...base, NODE_ENV: "production" });
+    expect(config.SOLANA_CLUSTER).toBe("devnet");
+  });
   it("accepts devnet defaults", () =>
     expect(envSchema.parse(base).SOLANA_CLUSTER).toBe("devnet"));
   it("rejects mainnet, missing key and malformed key", () => {

@@ -48,7 +48,7 @@ tsconfig.json
 
 ## Run locally
 
-Requirements: Node.js 22 or newer, npm, Docker with Compose. Run from the repository root:
+Requirements: Node.js 24, npm, Docker with Compose. Run from the repository root:
 
 ```sh
 npm ci
@@ -65,7 +65,7 @@ Open the Vite application at `http://localhost:5173` on your local machine. API:
 
 | Variable                | Purpose                                                            |
 | ----------------------- | ------------------------------------------------------------------ |
-| `NODE_ENV`              | `development` or `test`; production mode intentionally unsupported |
+| `NODE_ENV`              | `development`, `test` or `production`; all modes remain Devnet-only |
 | `DATABASE_URL`          | PostgreSQL connection URL                                          |
 | `PORT`                  | API port, defaults to 3001                                         |
 | `WEB_ORIGIN`            | Exact CORS origin, defaults to localhost:5173                      |
@@ -156,3 +156,46 @@ The prepared cloud instance ran frozen-lockfile installation, PostgreSQL startup
 `npm audit --omit=dev` reported four moderate transitive findings in the web3.js dependency chain (stream-json/uuid and dependent packages), with no high or critical findings. The compatible web3.js chain has no complete upstream fix advertised by npm; review/update these dependencies before extending this prototype toward production. No verification or integrity checks were disabled.
 
 Reusable installation and startup instructions, plus `api.devnet.solana.com` network access, were saved to the cloud environment draft. Review/save them in environment settings and publish through the product. Publication and restoration in a fresh task have not been verified.
+
+## Deploy the checkpoint to Vercel
+
+Import this GitHub repository as one Vercel project. Keep **Root Directory at the repository root** (do not select `apps/web`). The committed `vercel.json` installs with `npm ci`, builds the Vite frontend with `npm run build:vercel`, publishes `apps/web/dist`, and routes `/api/*` to the Node function in `api/index.ts`. Other frontend routes serve `index.html`. Use Node.js 24. Remove old dashboard overrides for build/output directories so the committed configuration applies.
+
+The function creates the same Express app and wallet services as local development, without `listen()`. Its PostgreSQL pool is reused per warm instance and limited to three connections; use the database provider's **pooled connection URL** for serverless traffic. Docker Compose is only for local development. No migrations, seed or wallet generation happen during the frontend build. Missing runtime configuration returns a safe JSON error instead of exposing secrets.
+
+Configure these **server-side** environment variables in Vercel Settings → Environment Variables for the intended deployment environments:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | External PostgreSQL pooled connection URL, with provider-supported TLS verification (for example `sslmode=verify-full`) |
+| `WALLET_ENCRYPTION_KEY` | A persistent 32-byte key encoded as 64 hex characters; never a `VITE_*` variable |
+| `SOLANA_CLUSTER` | `devnet` |
+| `SOLANA_RPC_URL` | `https://api.devnet.solana.com` or a verified HTTPS Devnet provider |
+| `WEB_ORIGIN` | Exact deployed origin, e.g. `https://your-project.vercel.app` |
+
+Vercel sets `NODE_ENV=production`; this now means hosted runtime optimization, **not production wallet custody**. The app remains a Devnet demo with one shared unauthenticated user and disabled withdrawals. Prefer Vercel Deployment Protection for client previews. Never put database passwords or encryption keys in build commands, Git files, screenshots, chat, or variables prefixed with `VITE_`.
+
+Before the first API request, initialize the external database from your local machine. Put its connection string, the encryption key and `SOLANA_CLUSTER=devnet` in a private `.env.vercel.local` file (already ignored by Git and Vercel uploads). Use the provider's direct migration connection URL if its pooler does not support migrations. Then run:
+
+```sh
+npm ci
+node --env-file=.env.vercel.local --import tsx apps/api/src/database.ts migrate
+node --env-file=.env.vercel.local --import tsx apps/api/src/database.ts seed
+```
+
+Keep TLS verification enabled; use your provider's required CA/trust configuration when applicable. Migration/seed are explicit operations and must not run in every function invocation or preview build. Use a separate preview database if you want preview and main deployments to have independent wallets.
+
+A **new external database creates a new wallet** on first use. The funded local wallet does not appear automatically in Vercel. To retain that exact address and its 5 Devnet SOL, securely migrate the existing database records and supply the **same encryption key** in Vercel. Never reset the key while retaining encrypted wallet records.
+
+Deploy/redeploy after configuring variables. Verify `/api/health`, `/api/wallet`, `/api/wallet/balance`, `/api/wallet/deposit-address`, and `/api/wallet/transactions`. Open the dashboard, decode/check the deposit QR, copy the address and refresh. Fund the deployed wallet on Devnet if you initialized a fresh database. The browser needs no API URL variable: all requests use the same-origin `/api` routes.
+
+Local checks:
+
+```sh
+npm run build:vercel
+npm run typecheck:vercel
+```
+
+A passing local build is not a deployed Vercel validation; external PostgreSQL credentials and an actual deployment remain required.
+
+Vercel adaptation validation: 15 unit tests, strict TypeScript, ESLint, frontend build, PostgreSQL integration and all 3 browser checks passed. The official `@vercel/node` builder produced a Node.js 24 function without `.env`; the packaged function served health, wallet, live 5 SOL balance and transaction endpoints successfully. `npm run test:vercel` is a repeatable local smoke test for the serverless entrypoint. An actual Vercel deployment against an external database still needs environment configuration.

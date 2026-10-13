@@ -9,13 +9,16 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
-    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/api && tsc --noEmit -p apps/web",
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/api && tsc --noEmit -p apps/web && npm run typecheck:vercel",
     "test": "vitest run",
     "lint": "eslint .",
     "db:migrate": "tsx apps/api/src/database.ts migrate",
     "db:seed": "tsx apps/api/src/database.ts seed",
     "test:integration": "tsx scripts/integration.ts",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "build:vercel": "npm run build -w apps/web",
+    "typecheck:vercel": "tsc --noEmit -p tsconfig.vercel.json",
+    "test:vercel": "tsx scripts/vercel-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
@@ -31,5 +34,8 @@
     "typescript-eslint": "^8.46.0",
     "vite": "^6.4.4",
     "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
