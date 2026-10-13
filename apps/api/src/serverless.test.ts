@@ -19,6 +19,7 @@ it("returns safe JSON when Vercel runtime configuration is invalid", async () =>
       expect(response.status).toBe(503);
       const body = await response.text();
       expect(JSON.parse(body).error.code).toBe("CONFIGURATION_ERROR");
+      expect(JSON.parse(body).error.fields).toContain("DATABASE_URL");
       expect(body).not.toContain("invalid-private-connection-value");
       expect(body).not.toContain("stack");
     } finally {
