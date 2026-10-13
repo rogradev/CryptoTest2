@@ -1,0 +1,35 @@
+{
+  "name": "devnet-wallet-checkpoint",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/api && tsc --noEmit -p apps/web",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "db:migrate": "tsx apps/api/src/database.ts migrate",
+    "db:seed": "tsx apps/api/src/database.ts seed",
+    "test:integration": "tsx scripts/integration.ts",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^22.0.0",
+    "@types/pngjs": "^6.0.5",
+    "concurrently": "^9.2.0",
+    "eslint": "^9.39.0",
+    "jsqr": "^1.4.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "vite": "^6.4.4",
+    "vitest": "^3.2.0"
+  }
+}

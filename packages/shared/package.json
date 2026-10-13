@@ -1,0 +1,8 @@
+{
+  "name": "@wallet/shared",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  }
+}
