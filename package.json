@@ -1,7 +1,6 @@
 {
   "name": "devnet-wallet-checkpoint",
   "private": true,
-  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,7 +9,7 @@
     "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
     "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/api && tsc --noEmit -p apps/web && npm run typecheck:vercel",
-    "test": "vitest run",
+    "test": "npm run test:dependencies && vitest run",
     "lint": "eslint .",
     "db:migrate": "tsx apps/api/src/database.ts migrate",
     "db:seed": "tsx apps/api/src/database.ts seed",
@@ -18,7 +17,8 @@
     "test:browser": "playwright test",
     "build:vercel": "npm run build -w apps/web",
     "typecheck:vercel": "tsc --noEmit -p tsconfig.vercel.json",
-    "test:vercel": "tsx scripts/vercel-smoke.ts"
+    "test:vercel": "tsx scripts/vercel-smoke.ts",
+    "test:dependencies": "node --no-experimental-require-module scripts/check-sdk.cjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
@@ -37,5 +37,8 @@
   },
   "engines": {
     "node": "24.x"
+  },
+  "overrides": {
+    "rpc-websockets": "9.3.5"
   }
 }

@@ -34,11 +34,21 @@ import "@fontsource/dm-sans/latin-700.css";
 import "./styles.css";
 async function api<T>(path: string): Promise<T> {
   const res = await fetch(`/api${path}`);
-  if (!res.ok) {
-    const body = await res.json();
-    throw new Error(body.error?.message ?? "Unable to reach the wallet API");
+  const text = await res.text();
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Wallet API unavailable (HTTP ${res.status}). Check the Vercel function runtime logs and deployment configuration.`,
+    );
   }
-  return res.json() as Promise<T>;
+  if (!res.ok)
+    throw new Error(
+      body.error?.message ??
+        `Unable to reach the wallet API (HTTP ${res.status})`,
+    );
+  return body as T;
 }
 function App() {
   const [wallet, setWallet] = React.useState<WalletView>();
@@ -130,7 +140,9 @@ function App() {
   const shownBalance = balance?.balanceSol;
   const short = wallet
     ? `${wallet.address.slice(0, 6)}…${wallet.address.slice(-6)}`
-    : "Creating wallet…";
+    : error
+      ? "Wallet unavailable"
+      : "Creating wallet…";
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -325,7 +337,11 @@ function App() {
                 <Globe size={19} />
               </div>
               <div>
-                <h3>Connected to Devnet</h3>
+                <h3>
+                  {balance
+                    ? "Connected to Devnet"
+                    : "Devnet connection unverified"}
+                </h3>
                 <p>Native SOL · Test environment</p>
                 <span className="network-caption">
                   {balance

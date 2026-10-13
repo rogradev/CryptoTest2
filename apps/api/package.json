@@ -14,8 +14,9 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "pg": "^8.16.0",
-    "zod": "^4.1.0",
-    "undici": "^7.16.0"
+    "rpc-websockets": "9.3.5",
+    "undici": "^7.16.0",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

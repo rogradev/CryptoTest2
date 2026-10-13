@@ -199,3 +199,11 @@ npm run typecheck:vercel
 A passing local build is not a deployed Vercel validation; external PostgreSQL credentials and an actual deployment remain required.
 
 Vercel adaptation validation: 15 unit tests, strict TypeScript, ESLint, frontend build, PostgreSQL integration and all 3 browser checks passed. The official `@vercel/node` builder produced a Node.js 24 function without `.env`; the packaged function served health, wallet, live 5 SOL balance and transaction endpoints successfully. `npm run test:vercel` is a repeatable local smoke test for the serverless entrypoint. An actual Vercel deployment against an external database still needs environment configuration.
+
+### Vercel module compatibility
+
+`rpc-websockets` is pinned to 9.3.5 (also enforced by an npm override) because later releases pulled an ESM-only `uuid` into their CommonJS entrypoint. Vercel's runtime loader rejected that combination with `ERR_REQUIRE_ESM` before the API handler could run. The lockfile resolves a dual CommonJS/ESM `uuid` version. `npm run test:dependencies` reproduces a strict CommonJS loader without Node's experimental require-of-ESM fallback and must pass before deployment.
+
+The repository root intentionally does not declare `type: module`: Vercel's generated bundled launcher uses CommonJS. Application packages, the `api` entrypoint and TypeScript helper scripts declare ESM in their own package scopes. The bundled official Vercel launcher was exercised with the same strict loader, returning health, wallet, live balance and transaction responses successfully.
+
+The UI handles non-JSON platform errors without exposing a JSON parser exception and labels the Devnet connection as unverified until a successful balance read. These error states do not substitute a wallet or balance.

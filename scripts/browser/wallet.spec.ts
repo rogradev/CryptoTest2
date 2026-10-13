@@ -110,3 +110,31 @@ test("RPC failure displays unavailable balance and honest activity error", async
     "Solana Devnet is unavailable.",
   );
 });
+
+test("Vercel plain-text failure is readable without JSON parser errors", async ({
+  page,
+}) => {
+  await page.route("**/api/wallet", (r) =>
+    r.fulfill({
+      status: 500,
+      contentType: "text/plain",
+      body: "A server error has occurred\nFUNCTION_INVOCATION_FAILED",
+    }),
+  );
+  await page.route("**/api/wallet/balance", (r) =>
+    r.fulfill({
+      status: 500,
+      contentType: "text/plain",
+      body: "A server error has occurred\nFUNCTION_INVOCATION_FAILED",
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator(".error")).toContainText(
+    "Wallet API unavailable (HTTP 500)",
+  );
+  await expect(page.locator(".address-short")).toHaveText("Wallet unavailable");
+  await expect(
+    page.getByRole("heading", { name: "Devnet connection unverified" }),
+  ).toBeVisible();
+  await expect(page.locator(".error")).not.toContainText("Unexpected token");
+});
